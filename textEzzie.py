@@ -23,6 +23,22 @@ def which_room(location):
         return "kitchen"
 
 
+def time_of_day(trn):
+    if trn < 12:
+        hr = trn/4 + 10
+    else:
+        hr = trn/4 - 2
+    mins = (trn % 4) * 15
+    if trn < 8:
+        ampm = "AM"
+    else:
+        ampm = "PM"
+    if mins == 0:
+        print("It is now " + str(int(hr)) + ":00 " + ampm + ".")
+    else:
+        print("It is now " + str(int(hr)) + ":" + str(mins) + " " + ampm + ".")
+
+
 def place_players():
     axy = [random.randint(0, 650) + 25, random.randint(0, 650) + 25]
     dxy = [random.randint(0, 650) + 25, random.randint(0, 650) + 25]
@@ -30,31 +46,50 @@ def place_players():
     return [which_room(axy), which_room(dxy), which_room(exy), axy, dxy, exy]
 
 
-def choose_action(t, pl):
-    annie, david, ezzie, aloc, dloc, eloc = place_players()
-    print("Annie is in the " + annie + ". David is in the " + david
-          + ". You are in the " + ezzie + ". What will you do?")
-    decision = input("1 to poop, 2 to pretend to poop")
+def the_decision(t, pl, annie, david, ezzie):
+    decision = input("1 to poop, 2 to pretend to poop, 3 to bark incessantly, or any other key to skip this turn")
     if decision == "1" and pl > 0:
         treat_get = poop(pl)
         pl -= 1
-    else:
+    elif decision == "2":
         treat_get = pretend_to_poop(annie, david, ezzie)
+        if treat_get:
+            print("They fell for it! Good job with that fake pooping!")
+        else:
+            print("Nice try, faker.")
+    elif decision == "3":
+        treat_get = bark_incessantly()
+    else:
+        treat_get = False
+    return [treat_get, pl]
+
+
+def choose_action(t, pl, tg):
+    annie, david, ezzie, aloc, dloc, eloc = place_players()
+    print("Annie is in the " + annie + ". David is in the " + david
+          + ". You are in the " + ezzie + ". What will you do?")
+    if t == 48:
+        print("It's DT time! You don't have to do anything!")
+        input("Hit the 'Enter' key to continue.")
+        treat_get = True
+    else:
+        treat_get, pl = the_decision(t, pl, annie, david, ezzie)
     if treat_get:
-        print("You got a treat!")
+        print("You got a treat! You've gotten " + str(tg + 1) + " treat(s) so far.")
         print("")
     else:
-        print("Nice try, faker.")
+        print("No luck this time. You've gotten " + str(tg) + " treat(s) so far.")
         print("")
-    return pl
+    return [pl, treat_get]
 
 
-def take_turn(tern, poop_left):
+def take_turn(tern, poop_left, trts):
+    time_of_day(tern)
     print("Turn " + str(tern) + ". You have " + str(poop_left) + " poop(s) left.")
-    poops_left = choose_action(tern, poop_left)
+    poops_left, got_trt = choose_action(tern, poop_left, trts)
     tern += 1
     pooped = poop_left != poops_left and poop_left > 0
-    return pooped
+    return [got_trt, pooped]
 
 
 def poop(p):
@@ -80,10 +115,23 @@ def pretend_to_poop(aloc, dloc, eloc):
         return random.choice([True, False])
 
 
-turn = 0
-poops = 2
-while turn < 5:
-    did_a_poop = take_turn(turn, poops)
+def bark_incessantly():
+    odds = random.randint(0, 101)
+    if odds >= 95:
+        print("It worked! That's surprising...")
+        return True
+    else:
+        print("They didn't go for it. Oh, well, it was worth a shot...")
+        return False
+
+
+turn = 46
+poops = 5
+treats = 0
+while turn <= 56:
+    got_a_treat, did_a_poop = take_turn(turn, poops, treats)
+    if got_a_treat:
+        treats += 1
     if did_a_poop:
         poops -= 1
     turn += 1
